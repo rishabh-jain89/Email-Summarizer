@@ -1,19 +1,12 @@
-import os
-import json
-from fastapi import FastAPI
+import os, json, re, traceback
+from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from .crew import build_crew
 from .llm_wrapper import GeminiCrewAI
-from fastapi.middleware.cors import CORSMiddleware
-os.environ["CREWAI_TELEMETRY_ENABLED"] = "false"
 
-
-class ChatRequest(BaseModel):
-    context: str
-    summary: dict
-    question: str
-
-
+os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
 
 app = FastAPI(title="Email Summarizer API", version="1.0")
 app.add_middleware(
@@ -30,12 +23,22 @@ class EmailRequest(BaseModel):
 gemini_llm = GeminiCrewAI(
     model="gemini-2.5-flash",
     temperature=0.2,
-    google_api_key=os.getenv("GOOGLE_API_KEY")
 )
 
-import re
-from fastapi import Request, HTTPException
-from fastapi.responses import JSONResponse
+def format_response(message: str) -> dict:
+    return {
+        "data": {
+            "generateCopilotResponse": {
+                "__typename": "CopilotResponse",
+                "messages": [
+                    {"__typename": "TextMessageOutput", "role": "assistant", "content": [message]}
+                ],
+                "status": {"__typename": "BaseResponseStatus", "code": "success"},
+            }
+        }
+    }
+
+
 
 @app.post("/chat")
 async def chat_with_email_context(request: Request):
@@ -54,6 +57,9 @@ async def chat_with_email_context(request: Request):
                 user_question = text_msg.get("content", "")
                 break
 
+        if not user_question:
+            return JSONResponse(content=format_response("Please ask a question about the email."))
+
         email_text = ""
         summary = {}
 
@@ -70,65 +76,19 @@ async def chat_with_email_context(request: Request):
                     except json.JSONDecodeError:
                         summary = {"raw": val}
 
-        print(" Parsed question:", user_question)
-        print(" Parsed email preview:", email_text[:80])
-        print(" Parsed summary:", summary)
-
-        if not user_question:
-            return JSONResponse(content={
-                "data": {
-                    "generateCopilotResponse": {
-                        "__typename": "CopilotResponse",
-                        "messages": [
-                            {
-                                "__typename": "TextMessageOutput",
-                                "role": "assistant",
-                                "content": ["It looks like you didn't ask a question."]
-                            }
-                        ],
-                        "status": {"__typename": "BaseResponseStatus", "code": "success"}
-                    }
-                }
-            })
-
-
         crew = build_crew(mode="qa")
         for agent in crew.agents:
             agent.llm = gemini_llm
 
-        raw_result = crew.kickoff(inputs={
-            "email_text": email_text,
-            "summary": summary,
-            "question": user_question,
-        })
+        result = crew.kickoff(
+            inputs={"email_text": email_text, "summary": summary, "question": user_question}
+        )
 
-        assistant_response = str(raw_result).strip() or "I couldn’t generate a useful answer."
-
-        response = {
-            "data": {
-                "generateCopilotResponse": {
-                    "__typename": "CopilotResponse",
-                    "messages": [
-                        {
-                            "__typename": "TextMessageOutput",
-                            "role": "assistant",
-                            "content": [assistant_response]
-                        }
-                    ],
-                    "status": {
-                        "__typename": "BaseResponseStatus",
-                        "code": "success"
-                    }
-                }
-            }
-        }
-
-        return JSONResponse(content=response)
+        return JSONResponse(content=format_response(str(result).strip()))
 
     except Exception as e:
-        import traceback
-        print(" Error in /chat:", traceback.format_exc())
-        raise HTTPException(status_code=500, detail=str(e))
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Server Error in /chat endpoint")
 
 
 @app.post("/summarize")
