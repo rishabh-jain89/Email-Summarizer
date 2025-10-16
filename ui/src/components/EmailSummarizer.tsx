@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { summarizeEmail, EmailSummaryResponse } from "../api/summarize";
+import { summarizeEmail, EmailSummaryResponse } from "@/api/summarize";
 import { useCopilotContext } from "@copilotkit/react-core";
 
 
@@ -35,12 +35,14 @@ export default function EmailSummarizer() {
                 })}`
             );
 
-            const internalContext = copilot.getAllContext?.() || [];
-
-
-        } catch (err: any) {
-            console.error(err);
-            setError(err.message || "An unexpected error occurred.");
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                console.error(err);
+                setError(err.message);
+            } else {
+                console.error(err);
+                setError("An unexpected error occurred.");
+            }
         } finally {
             setLoading(false);
         }
