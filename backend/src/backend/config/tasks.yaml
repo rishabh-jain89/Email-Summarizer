@@ -1,0 +1,31 @@
+summarize_email:
+  description: >
+    Summarize the following email into structured JSON with two sections:
+    1. "main_points": key information from the email
+    2. "action_items": any explicit or implied tasks the recipient must do
+
+    Email:
+    {email_text}
+  expected_output: >
+    JSON in the following format:
+    {
+      "main_points": ["point1", "point2", ...],
+      "action_items": ["task1", "task2", ...]
+    }
+
+answer_email_question:
+  description: >
+    Use the provided email text and summary to answer the user’s question in natural language.
+    Be clear, concise, and conversational.
+    Focus on the key facts or action items relevant to the question.
+
+    EMAIL CONTENT:
+    {email_text}
+
+    SUMMARY:
+    {summary}
+
+    QUESTION:
+    {question}
+  expected_output: >
+    A conversational, helpful answer to the user's question about the email.
