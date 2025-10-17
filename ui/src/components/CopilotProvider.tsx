@@ -11,7 +11,7 @@ export default function CopilotProvider({
     children: React.ReactNode;
 }) {
     return (
-        <CopilotKit runtimeUrl="http://127.0.0.1:8000/chat">
+        <CopilotKit runtimeUrl="https://email-summarizer-backend.onrender.com/chat">
             {children}
 
             <CopilotPopup
