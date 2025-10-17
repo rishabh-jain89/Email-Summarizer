@@ -11,7 +11,7 @@ os.environ["CREWAI_DISABLE_TELEMETRY"] = "true"
 app = FastAPI(title="Email Summarizer API", version="1.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "https://email-summarizer-neon.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
