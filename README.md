@@ -30,5 +30,5 @@ This demo focuses on summarizing long emails into short concise point wise summa
 ---
 
 ### 🙋‍♂️ **Gtihub Repo Link**
-[Github Link](https://github.com/rishabh-jain89/Email-Summarizer.git)
-Created by [Rishabh Jain](https://github.com/rishabh-jain89)
+[Repository Link](https://github.com/rishabh-jain89/Email-Summarizer.git)<br>
+**Created by** [Rishabh Jain](https://github.com/rishabh-jain89)
